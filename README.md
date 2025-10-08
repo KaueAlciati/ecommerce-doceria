@@ -1,67 +1,75 @@
-# 🍬 Doce Encanto — E-commerce de Doceria em PHP
+# 🍬 Doce Encanto — E-commerce de Doceria (Flutter & PHP)
 
-Um site moderno, responsivo e encantador desenvolvido em **PHP** para a doceria fictícia **Doce Encanto**.  
-O objetivo do projeto é oferecer uma experiência agradável e intuitiva para que os clientes possam realizar pedidos de bolos, doces artesanais e sobremesas personalizadas online.
+O projeto da doceria fictícia **Doce Encanto** agora conta com uma experiência completa em **Flutter**, mantendo os arquivos PHP originais como referência. A nova aplicação Flutter foi criada para funcionar tanto em dispositivos móveis quanto na web, trazendo uma interface moderna e responsiva que replica o comportamento do site anterior.
 
 ---
 
 ## 🚀 Tecnologias Utilizadas
 
-- **PHP 8+** — Lógica de exibição, rotas e sessões  
-- **HTML5 / CSS3** — Estrutura e estilização do layout  
-- **JavaScript (mínimo)** — Interações leves no front-end  
-- **Google Fonts** — Tipografia elegante e suave  
-- **Font Awesome** — Ícones modernos e personalizáveis  
+### Nova aplicação
+- **Flutter 3** — Base do aplicativo multiplataforma (mobile/web)
+- **Provider** — Gerenciamento simples de estado para o carrinho
+- **Google Fonts** — Tipografia com a fonte Cookie e Inter
+
+### Referência original
+- **PHP 8+**, **HTML5/CSS3** e **JavaScript** (mínimo)
 
 ---
 
-## 💻 Funcionalidades
+## 💻 Funcionalidades Principais (Flutter)
 
-- Página inicial com banner e produtos em destaque  
-- Seção “Sobre nós” e depoimentos de clientes  
-- Catálogo de produtos com categorias e preços  
-- Carrinho de compras dinâmico usando **sessões PHP**  
-- Página de checkout simples e funcional  
-- Estrutura de templates com **includes (header/footer)**  
-- Layout totalmente **responsivo** (mobile-first)
+- Página inicial com banner hero, destaques, seção “Sobre” e depoimentos
+- Catálogo de produtos com filtro por categorias
+- Carrinho de compras com atualização de quantidades
+- Página de checkout com formulário validado e resumo do pedido
+- Tema responsivo com suporte a modo claro/escuro
 
 ---
 
 ## 🧁 Estrutura do Projeto
 
-php/
-├─ assets/
-│ ├─ hero-sweets.jpg
-│ ├─ product-birthday.jpg
-│ ├─ product-brigadeiro.jpg
-│ ├─ product-cake.jpg
-│ ├─ product-cupcake.jpg
-│ ├─ product-macarons.jpg
-│ └─ product-wedding.jpg
-│
-├─ includes/
-│ ├─ data.php
-│ ├─ footer.php
-│ ├─ functions.php
-│ └─ header.php
-│
-├─ cart.php
-├─ checkout.php
-├─ index.php
-├─ products.php
+```
+.
+├─ assets/                # Imagens utilizadas em ambas as versões
+├─ lib/
+│  ├─ data.dart           # Dados estáticos (produtos, categorias, depoimentos)
+│  ├─ models.dart         # Modelos das entidades principais
+│  ├─ app_state.dart      # Lógica do carrinho usando ChangeNotifier
+│  ├─ main.dart           # Ponto de entrada Flutter com rotas e tema
+│  ├─ pages/              # Telas (home, produtos, carrinho, checkout)
+│  └─ widgets/            # Componentes reutilizáveis (cartões de produto)
+├─ pubspec.yaml           # Configuração do projeto Flutter
+├─ analysis_options.yaml  # Regras de lint adicionais
+├─ index.php, cart.php…   # Implementação PHP original mantida como referência
 └─ README.md
-
-> Estrutura simples e organizada:  
-> - **assets/**: imagens e recursos visuais.  
-> - **includes/**: partes reutilizáveis e dados do sistema.  
-> - **cart.php / checkout.php / products.php**: páginas principais da loja.  
-> - **index.php**: página inicial do site.  
-> - **README.md**: documentação do projeto.
+```
 
 ---
 
-## 📦 Como executar o projeto
+## ▶️ Executando a versão Flutter
 
-1. **Clone o repositório:**
+1. Certifique-se de ter o [Flutter SDK](https://docs.flutter.dev/get-started/install) instalado.
+2. Instale as dependências:
    ```bash
-   git clone https://github.com/KaueAlciati/ecommerce-doceria.git
+   flutter pub get
+   ```
+3. Para executar em um dispositivo/emulador móvel:
+   ```bash
+   flutter run
+   ```
+4. Para executar no navegador (Flutter Web habilitado):
+   ```bash
+   flutter run -d chrome
+   ```
+
+---
+
+## 🗂️ Versão PHP (legado)
+
+Os arquivos PHP originais continuam disponíveis nas pastas `includes/`, `assets/` e nas páginas `index.php`, `products.php`, `cart.php` e `checkout.php`. Eles podem ser utilizados como referência ou executados em um ambiente com servidor PHP.
+
+---
+
+## 📄 Licença
+
+Projeto criado para fins educacionais e demonstração. Utilize, adapte e personalize conforme necessário.
