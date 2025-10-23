@@ -1,0 +1,66 @@
+# ==============================
+# CONFIGURAÇÃO PRINCIPAL DO SITE
+# ==============================
+
+# Define as páginas padrão
+DirectoryIndex index.php index.html index.htm
+
+# Ativa o mecanismo de reescrita
+RewriteEngine On
+
+# Corrige problema de cache (opcional, evita travar versões antigas de JS/CSS)
+<IfModule mod_headers.c>
+  Header set Cache-Control "no-cache, no-store, must-revalidate"
+  Header set Pragma "no-cache"
+  Header set Expires 0
+</IfModule>
+
+# ==============================
+# 1️⃣ ROTA DO LOGIN DO DONO
+# ==============================
+# Exemplo: http://localhost/pastel-sweet-shop/login
+# Isso envia o acesso para a tela de login do painel admin.
+RewriteRule ^login/?$ admin/login.php [L]
+
+# ==============================
+# 2️⃣ ROTAS DE PAINEL ADMIN
+# ==============================
+# Garante que qualquer acesso direto a /admin sem arquivo
+# abra o painel inicial (dashboard).
+RewriteCond %{REQUEST_URI} ^/pastel-sweet-shop/admin/?$
+RewriteRule ^admin/?$ admin/dashboard.php [L]
+
+# ==============================
+# 3️⃣ REGRAS GERAIS DE REESCRITA (para React/Vite ou SPA)
+# ==============================
+# Se o arquivo requisitado não existe...
+RewriteCond %{REQUEST_FILENAME} !-f
+# ...e não é uma pasta...
+RewriteCond %{REQUEST_FILENAME} !-d
+# ...então envia tudo para index.php (render SPA)
+RewriteRule ^ index.php [QSA,L]
+
+# ==============================
+# 4️⃣ PROTEÇÃO DE ARQUIVOS SENSÍVEIS
+# ==============================
+# Bloqueia acesso direto a arquivos que não devem ser públicos
+<FilesMatch "(^\.env|config\.php|composer\.json|package\.json|yarn\.lock|README|LEIA-ME)">
+  Require all denied
+</FilesMatch>
+
+# ==============================
+# 5️⃣ BLOQUEIO DE LISTAGEM DE DIRETÓRIOS
+# ==============================
+Options -Indexes
+
+# ==============================
+# 6️⃣ FORÇA UTF-8 (evita erro de acentuação)
+# ==============================
+AddDefaultCharset UTF-8
+
+# ==============================
+# 7️⃣ LOG OPCIONAL DE ERROS
+# ==============================
+# Cria log de erros do Apache dentro da pasta logs (opcional)
+#ErrorLog "logs/erros-apache.log"
+#CustomLog "logs/acessos-apache.log" combined

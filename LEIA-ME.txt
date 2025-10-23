@@ -1,0 +1,2 @@
+Projeto pronto para PHP.
+Extraia para C:\xampp\htdocs\pastel-sweet-shop\ e acesse http://localhost/pastel-sweet-shop/
