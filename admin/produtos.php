@@ -3,33 +3,30 @@ require __DIR__ . '/guard.php';
 $cfg  = require __DIR__ . '/config.php';
 $base = rtrim($cfg['base'] ?? '', '/');
 
-require __DIR__ . '/store.php';
+// agora usamos o banco de dados via PDO:
+require __DIR__ . '/db_store.php'; // funções db_products_all, db_products_add etc.
 
-// --------- Ações (POST) ----------
+/* --------- Ações (POST) ---------- */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $action = $_POST['action'] ?? '';
-  $list = load_products();
 
   if ($action === 'add') {
-    $name = trim($_POST['name'] ?? '');
-    $price = (float)($_POST['price'] ?? 0);
-    $category = trim($_POST['category'] ?? '');
-    $status = in_array($_POST['status'] ?? 'available', ['available','unavailable']) ? $_POST['status'] : 'available';
-    $image = trim($_POST['image'] ?? '');
-    $desc  = trim($_POST['description'] ?? '');
+    $name      = trim($_POST['name'] ?? '');
+    $price     = (float)($_POST['price'] ?? 0);
+    $category  = trim($_POST['category'] ?? '');
+    $status    = in_array($_POST['status'] ?? 'available', ['available','unavailable']) ? $_POST['status'] : 'available';
+    $image     = trim($_POST['image'] ?? '');
+    $desc      = trim($_POST['description'] ?? '');
 
     if ($name !== '') {
-      $list[] = [
-        'id' => next_product_id($list),
-        'name' => $name,
-        'price' => $price,
-        'category' => $category,
-        'status' => $status, // available | unavailable
-        'image' => $image,
-        'description' => $desc,
-        'created_at' => date('Y-m-d H:i:s'),
-      ];
-      save_products($list);
+      db_products_add($pdo, [
+        'nome'       => $name,
+        'preco'      => $price,
+        'categoria'  => $category,
+        'status'     => $status,
+        'imagem'     => $image,
+        'descricao'  => $desc,
+      ]);
       header("Location: {$base}/admin/produtos.php?ok=1");
       exit;
     }
@@ -37,36 +34,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   if ($action === 'delete') {
     $id = (int)($_POST['id'] ?? 0);
-    $list = array_values(array_filter($list, fn($p) => (int)$p['id'] !== $id));
-    save_products($list);
+    db_products_delete($pdo, $id);
     header("Location: {$base}/admin/produtos.php?deleted=1");
     exit;
   }
 
   if ($action === 'toggle') {
     $id = (int)($_POST['id'] ?? 0);
-    foreach ($list as &$p) {
-      if ((int)$p['id'] === $id) {
-        $p['status'] = ($p['status'] ?? 'available') === 'available' ? 'unavailable' : 'available';
-        break;
-      }
-    }
-    unset($p);
-    save_products($list);
+    db_products_toggle($pdo, $id);
     header("Location: {$base}/admin/produtos.php?toggled=1");
     exit;
   }
 }
 
-// --------- Listagem (GET) ----------
-$q = trim($_GET['q'] ?? '');
-$filter = $_GET['filter'] ?? 'all'; // all | available | unavailable
+/* --------- Listagem (GET) ---------- */
+$q       = trim($_GET['q'] ?? '');
+$filter  = $_GET['filter'] ?? 'all'; // all | available | unavailable
 
-$products = load_products();
-$view = array_filter($products, function($p) use ($q,$filter){
+$products = db_products_all($pdo);
+
+// filtros de busca e status
+$view = array_filter($products, function($p) use ($q, $filter) {
   $ok = true;
   if ($q !== '') {
-    $hay = mb_strtolower(($p['name'] ?? '') . ' ' . ($p['category'] ?? ''));
+    $hay = mb_strtolower(($p['nome'] ?? '') . ' ' . ($p['categoria'] ?? ''));
     $ok = $ok && str_contains($hay, mb_strtolower($q));
   }
   if ($filter === 'available')   $ok = $ok && (($p['status'] ?? 'available') === 'available');
@@ -167,12 +158,12 @@ usort($view, fn($a,$b) => (int)$b['id'] <=> (int)$a['id']);
     <?php else: ?>
       <?php foreach ($view as $p): ?>
         <div class="item">
-          <img class="thumb" src="<?= htmlspecialchars($p['image'] ?: $base.'/assets/product-cupcakes.jpg') ?>" alt="">
+          <img class="thumb" src="<?= htmlspecialchars($p['imagem'] ?: $base.'/assets/product-cupcakes.jpg') ?>" alt="">
           <div>
-            <div style="font-weight:700"><?= htmlspecialchars($p['name']) ?></div>
-            <div class="muted"><?= htmlspecialchars($p['category'] ?: 'Sem categoria') ?></div>
+            <div style="font-weight:700"><?= htmlspecialchars($p['nome']) ?></div>
+            <div class="muted"><?= htmlspecialchars($p['categoria'] ?: 'Sem categoria') ?></div>
           </div>
-          <div><span class="pill"><?= 'R$ '.number_format((float)$p['price'],2,',','.') ?></span></div>
+          <div><span class="pill"><?= 'R$ '.number_format((float)$p['preco'],2,',','.') ?></span></div>
           <div>
             <?php if(($p['status'] ?? 'available') === 'available'): ?>
               <span class="pill ok">Disponível</span>

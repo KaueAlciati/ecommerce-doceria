@@ -3,50 +3,23 @@ require __DIR__ . '/guard.php';
 $cfg  = require __DIR__ . '/config.php';
 $base = rtrim($cfg['base'] ?? '', '/');
 
-require __DIR__ . '/store.php'; // load_orders() / save_orders()
+// >>> usa PDO / funções do banco
+require __DIR__ . '/db_store.php'; // db_orders_all(), db_orders_set_status()
 
-// ------------ AÇÕES (POST) ------------
+/* ------------ AÇÕES (POST) ------------ */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'set_status') {
   $id     = (int)($_POST['id'] ?? 0);
   $status = $_POST['status'] ?? 'preparing'; // preparing | delivered | cancelled
 
-  $orders = load_orders();
-  foreach ($orders as &$o) {
-    if ((int)$o['id'] === $id) {
-      // normaliza
-      if ($status === 'delivered') $o['status'] = 'delivered';
-      elseif ($status === 'cancelled') $o['status'] = 'cancelled';
-      else $o['status'] = 'preparing';
-      break;
-    }
-  }
-  unset($o);
-  save_orders($orders);
+  db_orders_set_status($pdo, $id, $status);
+
   header("Location: {$base}/admin/pedidos.php?filter=" . urlencode($_GET['filter'] ?? 'all'));
   exit;
 }
 
-// ------------ LISTAGEM (GET) ------------
+/* ------------ LISTAGEM (GET) ------------ */
 $filter = $_GET['filter'] ?? 'all'; // all | preparing | delivered | cancelled
-$orders = load_orders();
-
-// normaliza status antigo "paid" -> "preparing"
-$changed = false;
-foreach ($orders as &$o) {
-  if (($o['status'] ?? '') === 'paid') { $o['status'] = 'preparing'; $changed = true; }
-}
-unset($o);
-if ($changed) save_orders($orders);
-
-// filtra
-$view = array_filter($orders, function($o) use ($filter) {
-  if ($filter === 'all') return true;
-  $st = $o['status'] ?? 'preparing';
-  return $st === $filter;
-});
-
-// ordena: mais novo primeiro
-usort($view, fn($a,$b) => strcmp($b['date'], $a['date']));
+$orders = db_orders_all($pdo, $filter); // já vem ordenado por data DESC no db_store.php
 ?>
 <!doctype html>
 <html lang="pt-BR">
@@ -128,7 +101,7 @@ usort($view, fn($a,$b) => strcmp($b['date'], $a['date']));
     </nav>
   </div>
 
-  <?php if (!$view): ?>
+  <?php if (!$orders): ?>
     <div class="empty">Nenhum pedido encontrado</div>
   <?php else: ?>
     <div class="table" style="margin-top:14px">
@@ -141,18 +114,18 @@ usort($view, fn($a,$b) => strcmp($b['date'], $a['date']));
         <div class="cell">Status / Ações</div>
       </div>
 
-      <?php foreach ($view as $o): ?>
+      <?php foreach ($orders as $o): ?>
         <?php
-          $status = $o['status'] ?? 'preparing';
+          $status     = $o['status'] ?? 'preparing';       // preparing|delivered|cancelled
           $badgeClass = $status==='delivered' ? 'delivered' : ($status==='cancelled' ? 'cancelled' : 'preparing');
-          $itemsText = implode(', ', array_map(fn($it)=> (int)$it['qty'].'x '.$it['name'], $o['items'] ?? []));
-          $date = date('d/m/Y H:i', strtotime($o['date'] ?? date('Y-m-d H:i:s')));
+          $itemsText  = implode(', ', array_map(fn($it)=> (int)$it['quantidade'].'x '.$it['nome'], $o['items'] ?? []));
+          $date       = date('d/m/Y H:i', strtotime($o['data'] ?? date('Y-m-d H:i:s')));
         ?>
         <div class="row">
           <div class="cell"><strong>#<?= (int)$o['id'] ?></strong></div>
           <div class="cell"><?= $date ?></div>
           <div class="cell"><span class="muted"><?= htmlspecialchars($itemsText ?: '-') ?></span></div>
-          <div class="cell"><span class="muted"><?= htmlspecialchars($o['customer'] ?? '-') ?></span></div>
+          <div class="cell"><span class="muted"><?= htmlspecialchars($o['cliente'] ?? '-') ?></span></div>
           <div class="cell"><strong>R$ <?= number_format((float)($o['total'] ?? 0),2,',','.') ?></strong></div>
           <div class="cell">
             <div class="row-actions">
