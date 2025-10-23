@@ -1,13 +1,17 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) session_start();
-$cfg = require __DIR__ . '/config.php';
+
+$cfg  = require __DIR__ . '/config.php';
 $base = rtrim($cfg['base'] ?? '', '/');
+
+// se já estiver logado como dono, manda pro painel
 if (!empty($_SESSION['owner_logged'])) {
   header("Location: {$base}/admin/dashboard.php");
   exit;
 }
-$err = isset($_GET['err']) ? (int)$_GET['err'] : 0;
-$remember_email = $_COOKIE['remember_email'] ?? '';
+
+$err             = isset($_GET['err']) ? (int)$_GET['err'] : 0;
+$remember_email  = $_COOKIE['remember_email'] ?? '';
 ?>
 <!doctype html>
 <html lang="pt-BR">
@@ -56,7 +60,8 @@ $remember_email = $_COOKIE['remember_email'] ?? '';
       .back:hover{ text-decoration:underline }
       @media (max-width:560px){ .card{ padding:26px 18px; } }
     </style>
-    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cookie&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   </head>
   <body>
@@ -68,22 +73,25 @@ $remember_email = $_COOKIE['remember_email'] ?? '';
         <div class="error">E-mail ou senha inválidos.</div>
       <?php endif; ?>
 
-      <label>E-mail</label>
-      <input class="input" type="email" name="email" placeholder="seu@email.com" value="<?= htmlspecialchars($remember_email) ?>" required>
+      <label for="email">E-mail</label>
+      <input id="email" class="input" type="email" name="email" placeholder="seu@email.com"
+             value="<?= htmlspecialchars($remember_email) ?>" required>
 
-      <label>Senha</label>
-      <input class="input" type="password" name="pass" placeholder="••••••••" required>
+      <label for="pass">Senha</label>
+      <input id="pass" class="input" type="password" name="pass" placeholder="••••••••" required>
 
       <div class="row">
-        <input id="remember" type="checkbox" name="remember" style="accent-color:#ff6aa8">
+               <input id="remember" type="checkbox" name="remember" style="accent-color:#ff6aa8">
         <label for="remember" style="margin:0; font-weight:500;">Lembrar-me</label>
       </div>
 
       <button class="btn" type="submit">Entrar</button>
 
       <div class="links">
-        Não tem uma conta? <a href="#">Cadastre-se</a>
+        Não tem uma conta?
+        <a href="<?= $base ?>/admin/register.php">Cadastre-se</a>
       </div>
+
       <a class="back" href="<?= $base ?>/">Voltar para a loja</a>
     </form>
   </body>
