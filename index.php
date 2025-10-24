@@ -1,12 +1,60 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/db_connect.php';
+
+// ==============================
+// BUSCAR PRODUTOS DO BANCO
+// ==============================
+$featuredProducts = [];
+try {
+  $sql = "
+    SELECT 
+      id_produto AS id,
+      nome AS name,
+      preco AS price,
+      COALESCE(imagem, '') AS image,
+      COALESCE(categoria, '') AS category,
+      COALESCE(descricao, '') AS description
+    FROM produtos
+    WHERE (disponivel = 1 OR disponivel IS NULL)
+    ORDER BY id_produto DESC
+    LIMIT 3
+  ";
+  $featuredProducts = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+  $featuredProducts = [];
+}
+
+// ==============================
+// DEPOIMENTOS (fixos por enquanto)
+// ==============================
+$testimonials = [
+  [
+    'name' => 'Ana Clara',
+    'rating' => 5,
+    'text' => 'Os bolos da Doce Encanto são simplesmente maravilhosos! Sempre fresquinhos e lindos.'
+  ],
+  [
+    'name' => 'Rafael Santos',
+    'rating' => 5,
+    'text' => 'Atendimento impecável e sabor incrível. Recomendo de olhos fechados!'
+  ],
+  [
+    'name' => 'Mariana Oliveira',
+    'rating' => 4,
+    'text' => 'Os cupcakes são uma delícia! Perfeitos para presentear e para festas.'
+  ],
+];
 
 $pageTitle = 'Doce Encanto - Doces Artesanais';
 $activePage = 'index';
-$featuredProducts = array_slice($products, 0, 3);
 
 include __DIR__ . '/includes/header.php';
 ?>
+
+<!-- ============================== -->
+<!-- HERO SECTION -->
+<!-- ============================== -->
 <section class="relative overflow-hidden">
   <div class="absolute inset-0 gradient-hero opacity-30"></div>
   <div class="container mx-auto px-4 py-20 md:py-32 relative z-10">
@@ -35,6 +83,9 @@ include __DIR__ . '/includes/header.php';
   </div>
 </section>
 
+<!-- ============================== -->
+<!-- PRODUTOS DESTAQUES -->
+<!-- ============================== -->
 <section class="container mx-auto px-4 py-20">
   <div class="text-center mb-12">
     <h2 class="text-4xl font-bold mb-4">
@@ -44,32 +95,43 @@ include __DIR__ . '/includes/header.php';
       Conheça alguns dos nossos produtos mais queridos pelos clientes
     </p>
   </div>
-  <div class="grid md:grid-cols-3 gap-8 mb-8">
-    <?php foreach ($featuredProducts as $product): ?>
-      <div class="bg-card rounded-3xl shadow-card hover-lift overflow-hidden flex flex-col">
-        <img src="<?= htmlspecialchars($product['image']) ?>" alt="<?= htmlspecialchars($product['name']) ?>" class="h-56 w-full object-cover" />
-        <div class="p-6 space-y-3 flex-1 flex flex-col">
-          <div class="flex items-center justify-between">
-            <span class="px-3 py-1 rounded-full bg-primary/15 text-primary text-sm font-medium capitalize">
-              <?= htmlspecialchars($product['category']) ?>
-            </span>
-            <span class="text-lg font-semibold text-foreground"><?= format_currency($product['price']) ?></span>
+
+  <?php if (empty($featuredProducts)): ?>
+    <p class="text-center text-muted-foreground">Nenhum produto cadastrado ainda.</p>
+  <?php else: ?>
+    <div class="grid md:grid-cols-3 gap-8 mb-8">
+      <?php foreach ($featuredProducts as $product): 
+        $img = trim($product['image']) !== '' ? $product['image'] : 'assets/product-cupcakes.jpg';
+      ?>
+        <div class="bg-card rounded-3xl shadow-card hover-lift overflow-hidden flex flex-col">
+          <img src="<?= htmlspecialchars($img) ?>" alt="<?= htmlspecialchars($product['name']) ?>" class="h-56 w-full object-cover" />
+          <div class="p-6 space-y-3 flex-1 flex flex-col">
+            <div class="flex items-center justify-between">
+              <span class="px-3 py-1 rounded-full bg-primary/15 text-primary text-sm font-medium capitalize">
+                <?= htmlspecialchars($product['category']) ?>
+              </span>
+              <span class="text-lg font-semibold text-foreground"><?= format_currency((float)$product['price']) ?></span>
+            </div>
+            <h3 class="text-2xl font-semibold text-foreground"><?= htmlspecialchars($product['name']) ?></h3>
+            <p class="text-muted-foreground flex-1">
+              <?= htmlspecialchars($product['description']) ?>
+            </p>
+
+            <!-- Botão de adicionar -->
+            <form method="post" action="cart.php" class="pt-4">
+              <input type="hidden" name="action" value="add">
+              <input type="hidden" name="product_id" value="<?= (int)$product['id'] ?>">
+              <input type="hidden" name="qty" value="1">
+              <button type="submit" class="w-full inline-flex items-center justify-center rounded-full gradient-primary text-primary-foreground py-3 font-medium transition hover:opacity-90">
+                Adicionar ao Carrinho
+              </button>
+            </form>
           </div>
-          <h3 class="text-2xl font-semibold text-foreground"><?= htmlspecialchars($product['name']) ?></h3>
-          <p class="text-muted-foreground flex-1">
-            <?= htmlspecialchars($product['description']) ?>
-          </p>
-          <form method="post" action="products.php" class="pt-4">
-            <input type="hidden" name="action" value="add_to_cart" />
-            <input type="hidden" name="product_id" value="<?= htmlspecialchars($product['id']) ?>" />
-            <button type="submit" class="w-full inline-flex items-center justify-center rounded-full gradient-primary text-primary-foreground py-3 font-medium transition hover:opacity-90">
-              Adicionar ao Carrinho
-            </button>
-          </form>
         </div>
-      </div>
-    <?php endforeach; ?>
-  </div>
+      <?php endforeach; ?>
+    </div>
+  <?php endif; ?>
+
   <div class="text-center">
     <a href="products.php" class="inline-flex items-center justify-center rounded-full border border-border px-6 py-3 font-medium transition hover:text-primary">
       Ver Todos os Produtos
@@ -77,6 +139,9 @@ include __DIR__ . '/includes/header.php';
   </div>
 </section>
 
+<!-- ============================== -->
+<!-- SOBRE A DOCERIA -->
+<!-- ============================== -->
 <section class="bg-muted/30 py-20">
   <div class="container mx-auto px-4">
     <div class="grid md:grid-cols-2 gap-12 items-center">
@@ -118,6 +183,9 @@ include __DIR__ . '/includes/header.php';
   </div>
 </section>
 
+<!-- ============================== -->
+<!-- DEPOIMENTOS -->
+<!-- ============================== -->
 <section class="container mx-auto px-4 py-20">
   <div class="text-center mb-12">
     <h2 class="text-4xl font-bold mb-4">
@@ -142,4 +210,5 @@ include __DIR__ . '/includes/header.php';
     <?php endforeach; ?>
   </div>
 </section>
+
 <?php include __DIR__ . '/includes/footer.php'; ?>

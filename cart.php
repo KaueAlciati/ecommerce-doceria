@@ -1,35 +1,99 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/db_connect.php';
 
+if (session_status() === PHP_SESSION_NONE) {
+  session_start();
+}
+
+/* =========================
+   AÇÕES DO CARRINHO (POST)
+   ========================= */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action = $_POST['action'] ?? '';
-    $productId = $_POST['product_id'] ?? '';
+  $action    = $_POST['action']     ?? '';
+  $productId = (int)($_POST['product_id'] ?? 0);
 
-    if ($action === 'update_quantity' && $productId !== '') {
-        $quantity = max(0, (int)($_POST['quantity'] ?? 0));
-        update_quantity($productId, $quantity);
-    }
+  /* ---- ADICIONAR ITEM ---- */
+  if ($action === 'add' && $productId > 0) {
+    $qty = max(1, (int)($_POST['qty'] ?? 1));
 
-    if ($action === 'remove_item' && $productId !== '') {
-        remove_from_cart($productId);
-    }
+    if (function_exists('add_to_cart')) {
+      // se você criou um helper que já busca no banco e injeta na sessão
+      add_to_cart($productId, $qty);
+    } else {
+      // Fallback manual: busca do banco e injeta na sessão
+      $st = $pdo->prepare("
+        SELECT 
+          id_produto AS id,
+          nome,
+          preco,
+          imagem
+        FROM produtos
+        WHERE id_produto = ?
+          AND (disponivel = 1 OR disponivel IS NULL)
+        LIMIT 1
+      ");
+      $st->execute([$productId]);
+      $p = $st->fetch(PDO::FETCH_ASSOC);
 
-    if ($action === 'clear_cart') {
-        clear_cart();
+      if ($p) {
+        if (!isset($_SESSION['cart'])) $_SESSION['cart'] = [];
+
+        if (isset($_SESSION['cart'][$productId])) {
+          $_SESSION['cart'][$productId]['quantity'] += $qty;
+        } else {
+          $_SESSION['cart'][$productId] = [
+            'product' => [
+              'id'    => (int)$p['id'],
+              'name'  => $p['nome'],
+              'price' => (float)$p['preco'],
+              'image' => $p['imagem'] ?: 'assets/product-cupcakes.jpg',
+            ],
+            'quantity' => $qty,
+          ];
+        }
+      }
     }
 
     header('Location: cart.php');
     exit;
+  }
+
+  /* ---- ATUALIZAR QUANTIDADE ---- */
+  if ($action === 'update_quantity' && $productId > 0) {
+    $quantity = max(0, (int)($_POST['quantity'] ?? 0));
+    update_quantity($productId, $quantity);
+    header('Location: cart.php');
+    exit;
+  }
+
+  /* ---- REMOVER ITEM ---- */
+  if ($action === 'remove_item' && $productId > 0) {
+    remove_from_cart($productId);
+    header('Location: cart.php');
+    exit;
+  }
+
+  /* ---- LIMPAR CARRINHO ---- */
+  if ($action === 'clear_cart') {
+    clear_cart();
+    header('Location: cart.php');
+    exit;
+  }
 }
 
-$cart = get_cart();
+/* =========================
+   EXIBIÇÃO
+   ========================= */
+$cart   = get_cart();
 $totals = cart_totals();
 
-$pageTitle = 'Carrinho - Doce Encanto';
+$pageTitle  = 'Carrinho - Doce Encanto';
 $activePage = 'cart';
 
 include __DIR__ . '/includes/header.php';
 ?>
+
 <?php if (count($cart) === 0): ?>
   <div class="container mx-auto px-4 py-20">
     <div class="max-w-md mx-auto text-center p-12 bg-card rounded-3xl shadow-card">
@@ -101,6 +165,7 @@ include __DIR__ . '/includes/header.php';
           </div>
         <?php endforeach; ?>
       </div>
+
       <div class="lg:col-span-1">
         <div class="bg-card rounded-3xl shadow-card p-6 space-y-4 sticky top-24">
           <h3 class="text-xl font-bold">Resumo do Pedido</h3>
@@ -130,7 +195,9 @@ include __DIR__ . '/includes/header.php';
           </div>
         </div>
       </div>
+
     </div>
   </div>
 <?php endif; ?>
+
 <?php include __DIR__ . '/includes/footer.php'; ?>
