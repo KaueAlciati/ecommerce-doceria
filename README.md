@@ -108,18 +108,3 @@ Finalize um pedido no site e clique em
 ### 📸 Outras Telas
 <p align="center"> <img src="assets/screenshots/login.png" width="45%" /> <img src="assets/screenshots/cadastre-se.png" width="45%" /> </p> <p align="center"> <img src="assets/screenshots/dashboard.png" width="45%" /> <img src="assets/screenshots/banco de dados.png" width="45%" /> </p>
 Projeto desenvolvido para fins acadêmicos, simulando uma aplicação real de e-commerce com integração a API externa.
-
----
-
-### 💾 Para corrigir o seu:
-1️⃣ Apague o conteúdo atual do `README.md`  
-2️⃣ Cole **exatamente** esse acima (sem o bloco triplo \`\`\`markdown inicial)  
-3️⃣ Salve o arquivo  
-
----
-
-Depois:
-```bash
-git add README.md
-git commit -m "docs: corrige formatação do README no GitHub"
-git push
