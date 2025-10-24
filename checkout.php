@@ -10,9 +10,9 @@ if (count($cart) === 0) {
 
 // Mantém itens do pedido em memória mesmo após limpar o carrinho
 $cartItems = $cart;
-$totals = cart_totals();
+$totals    = cart_totals();
 
-// Dados do formulário
+// Dados do formulário (pré)
 $formData = [
     'name'           => '',
     'email'          => '',
@@ -23,9 +23,12 @@ $formData = [
 
 $orderConfirmed = false;
 $errorMessage   = '';
-$orderSubtotal  = $totals['total'];
+$orderSubtotal  = (float)$totals['total'];
 $discountValue  = 0.0;
 $finalTotal     = $orderSubtotal;
+
+// Para usar no sucesso
+$orderId = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $formData['name']           = trim($_POST['name'] ?? '');
@@ -37,42 +40,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$formData['name'] || !$formData['email'] || !$formData['phone'] || !$formData['address']) {
         $errorMessage = 'Por favor, preencha todos os campos obrigatórios.';
     } else {
-        // Calcula desconto PIX (5%) e total final
+        // Desconto PIX (5%)
         if ($formData['payment_method'] === 'pix') {
             $discountValue = $orderSubtotal * 0.05;
         }
         $finalTotal = $orderSubtotal - $discountValue;
 
-        // =========================
-        //  REGISTRAR PEDIDO (Renda)
-        // =========================
-        // -> grava em storage/orders.json para a aba Renda somar automaticamente
+        // ===== Registrar pedido (lido por Renda) =====
         require_once __DIR__ . '/admin/store.php';
 
-        // Monta itens no formato esperado por add_order():
-        // [ product_id, name, qty, unit_price ]
         $items = [];
         foreach ($cartItems as $item) {
-            $product = $item['product'];
+            $p = $item['product'];
             $items[] = [
-                'product_id' => (int)($product['id'] ?? 0),
-                'name'       => (string)$product['name'],
+                'product_id' => (int)($p['id'] ?? 0),
+                'name'       => (string)$p['name'],
                 'qty'        => (int)$item['quantity'],
-                'unit_price' => (float)$product['price'],
+                'unit_price' => (float)$p['price'],
             ];
         }
 
-        // Se tiver frete na sua loja, substitua 0.0 pela variável correspondente.
         $shippingValue = 0.0;
+        $customer      = $formData['name'];
 
-        // Nome/identificação do cliente (você pode incluir email/telefone se quiser)
-        $customer = $formData['name'];
+        // Pega ID do pedido retornado
+        $orderId = add_order($items, $shippingValue, $customer);
 
-        // Grava o pedido — isso cria/atualiza storage/orders.json
-        // e será lido por admin/renda.php
-        add_order($items, $shippingValue, $customer);
-
-        // Limpa carrinho e confirma o pedido para mostrar o recibo
+        // Limpa carrinho e mostra recibo
         clear_cart();
         $orderConfirmed = true;
     }
@@ -82,6 +76,11 @@ $pageTitle  = 'Checkout - Doce Encanto';
 $activePage = '';
 
 include __DIR__ . '/includes/header.php';
+
+// valores para o resumo dinâmico (lado do formulário)
+$isPix        = ($formData['payment_method'] ?? 'pix') === 'pix';
+$discountPix  = $orderSubtotal * 0.05;
+$initialTotal = $isPix ? ($orderSubtotal - $discountPix) : $orderSubtotal;
 ?>
 <div class="container mx-auto px-4 py-12">
   <?php if ($orderConfirmed): ?>
@@ -121,6 +120,43 @@ include __DIR__ . '/includes/header.php';
           </div>
         </div>
       </div>
+
+      <?php
+        // === TEXTO PARA O TELEGRAM (formato do seu print) ===
+        $linhas = [];
+        foreach ($cartItems as $it) {
+          $p = $it['product'];
+          $linhas[] = "{$it['quantity']}x {$p['name']} — " . format_currency($p['price'] * $it['quantity']);
+        }
+        $itensTxt = implode("\n", $linhas);
+
+        $forma = ($formData['payment_method']==='pix')
+                 ? 'PIX (5% off)'
+                 : (($formData['payment_method']==='card') ? 'Cartão de Crédito' : 'Dinheiro na Entrega');
+
+        $tgText =
+          "🍰 *Doce Encanto informa:*\n".
+          "Seu pedido foi *confirmado* com sucesso! 🎉\n".
+          "Agradecemos a preferência, *{$formData['name']}* 💖\n\n".
+          "*Pedido:* #".($orderId ?? '—')."\n".
+          "*Itens:*\n{$itensTxt}\n\n".
+          "*Pagamento:* {$forma}\n".
+          "*Total:* ".format_currency($finalTotal)."\n\n".
+          "_Endereço:_ {$formData['address']}";
+      ?>
+
+      <!-- Envia a confirmação pelo Telegram -->
+      <form method="post" action="notify_telegram.php" class="inline-block">
+        <input type="hidden" name="text" value="<?= htmlspecialchars($tgText) ?>">
+        <!-- Se você quiser enviar para um chat específico do cliente, inclua chat_id aqui:
+        <input type="hidden" name="chat_id" value="">
+        -->
+        <input type="hidden" name="back" value="checkout.php">
+        <button type="submit"
+                class="inline-flex items-center justify-center rounded-full border border-border px-8 py-3 text-lg font-semibold hover:text-primary transition">
+          Receber confirmação no Telegram
+        </button>
+      </form>
 
       <a href="index.php" class="inline-flex items-center justify-center rounded-full gradient-primary hover:opacity-90 text-primary-foreground px-8 py-3 text-lg font-semibold transition">
         Voltar para a página inicial
@@ -179,7 +215,13 @@ include __DIR__ . '/includes/header.php';
               ?>
               <?php foreach ($paymentOptions as $value => $label): ?>
                 <label class="flex items-center gap-3 p-4 border border-border rounded-2xl hover:bg-muted/50 cursor-pointer">
-                  <input type="radio" name="payment_method" value="<?= $value ?>" <?= $formData['payment_method'] === $value ? 'checked' : '' ?> class="h-4 w-4 text-primary focus:ring-primary" />
+                  <input
+                    type="radio"
+                    name="payment_method"
+                    value="<?= $value ?>"
+                    class="h-4 w-4 text-primary focus:ring-primary js-pay"
+                    <?= $formData['payment_method'] === $value ? 'checked' : '' ?>
+                  />
                   <span class="font-medium text-foreground"><?= $label ?></span>
                 </label>
               <?php endforeach; ?>
@@ -202,23 +244,34 @@ include __DIR__ . '/includes/header.php';
                   </div>
                 <?php endforeach; ?>
               </div>
+
+              <?php
+                $subtotalData = number_format($orderSubtotal, 2, '.', '');
+                $discountData = number_format($discountPix,   2, '.', '');
+              ?>
+
               <div class="border-t border-border pt-4 space-y-2">
                 <div class="flex justify-between">
                   <span>Subtotal</span>
-                  <span><?= format_currency($orderSubtotal) ?></span>
+                  <span id="subtotalValue" data-subtotal="<?= htmlspecialchars($subtotalData) ?>">
+                    <?= format_currency($orderSubtotal) ?>
+                  </span>
                 </div>
 
-                <?php if ($formData['payment_method'] === 'pix'): ?>
-                  <div class="flex justify-between text-green-600">
-                    <span>Desconto PIX (5%)</span>
-                    <span>- <?= format_currency($orderSubtotal * 0.05) ?></span>
-                  </div>
-                <?php endif; ?>
+                <div
+                  id="discountRow"
+                  class="flex justify-between text-green-600 <?= $isPix ? '' : 'hidden' ?>"
+                  data-discount="<?= htmlspecialchars($discountData) ?>"
+                >
+                  <span>Desconto PIX (5%)</span>
+                  <span id="discountValue">- <?= format_currency($discountPix) ?></span>
+                </div>
 
                 <div class="flex justify-between items-center pt-2 border-t border-border">
                   <span class="text-xl font-bold">Total</span>
-                  <?php $computedTotal = $formData['payment_method'] === 'pix' ? $orderSubtotal * 0.95 : $orderSubtotal; ?>
-                  <span class="text-2xl font-bold text-primary"><?= format_currency($computedTotal) ?></span>
+                  <span class="text-2xl font-bold text-primary" id="totalValue">
+                    <?= format_currency($initialTotal) ?>
+                  </span>
                 </div>
               </div>
 
@@ -232,4 +285,40 @@ include __DIR__ . '/includes/header.php';
     </form>
   <?php endif; ?>
 </div>
+
+<!-- Atualiza desconto/total ao trocar forma de pagamento -->
+<script>
+(function () {
+  const radios       = document.querySelectorAll('input.js-pay[name="payment_method"]');
+  const subtotalEl   = document.getElementById('subtotalValue');
+  const discountRow  = document.getElementById('discountRow');
+  const discountEl   = document.getElementById('discountValue');
+  const totalEl      = document.getElementById('totalValue');
+
+  if (!radios.length || !subtotalEl || !discountRow || !discountEl || !totalEl) return;
+
+  const parseMoney = (v) => Number(String(v).replace(',', '.'));
+  const formatBRL  = (n) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+  const baseSubtotal = parseMoney(subtotalEl.dataset.subtotal);
+  const baseDiscount = parseMoney(discountRow.dataset.discount);
+
+  function updateSummary(method) {
+    if (method === 'pix') {
+      discountRow.classList.remove('hidden');
+      discountEl.textContent = '- ' + formatBRL(baseDiscount);
+      totalEl.textContent    = formatBRL(baseSubtotal - baseDiscount);
+    } else {
+      discountRow.classList.add('hidden');
+      totalEl.textContent = formatBRL(baseSubtotal);
+    }
+  }
+
+  const checked = document.querySelector('input.js-pay[name="payment_method"]:checked');
+  updateSummary(checked ? checked.value : 'pix');
+
+  radios.forEach(r => r.addEventListener('change', () => updateSummary(r.value)));
+})();
+</script>
+
 <?php include __DIR__ . '/includes/footer.php'; ?>

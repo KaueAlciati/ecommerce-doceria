@@ -1,5 +1,5 @@
 <?php
-// admin/store.php — utilidades para ler/escrever produtos em JSON
+// admin/store.php — utilidades para ler/escrever produtos/pedidos em JSON
 
 function products_file(): string {
   // volta duas pastas (admin/ -> raiz/) e vai para storage/products.json
@@ -17,7 +17,6 @@ function load_products(): array {
 
 function save_products(array $list): bool {
   $f = products_file();
-  // garante a pasta
   @mkdir(dirname($f), 0777, true);
   $json = json_encode(array_values($list), JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE);
   return (bool) @file_put_contents($f, $json);
@@ -28,7 +27,8 @@ function next_product_id(array $list): int {
   foreach ($list as $p) { $max = max($max, (int)($p['id'] ?? 0)); }
   return $max + 1;
 }
-// ==== PROMOTIONS (JSON) ======================================
+
+/* ================= PROMOTIONS (JSON) ================== */
 function promotions_file(): string {
   return dirname(__DIR__) . '/storage/promotions.json';
 }
@@ -51,7 +51,8 @@ function next_promo_id(array $list): int {
   foreach ($list as $p) { $max = max($max, (int)($p['id'] ?? 0)); }
   return $max + 1;
 }
-// ============ ORDERS (JSON) ==================================================
+
+/* ================= ORDERS (JSON) ====================== */
 function orders_file(): string {
   return dirname(__DIR__) . '/storage/orders.json';
 }
@@ -78,6 +79,7 @@ function next_order_id(array $list): int {
 /**
  * Guarda um pedido vindo do site.
  * $items = [ [product_id, name, qty, unit_price], ... ]
+ * Retorna o ID do pedido criado.
  */
 function add_order(array $items, float $shipping = 0.0, string $customer = '', ?string $date = null): int {
   $orders = load_orders();
@@ -102,14 +104,14 @@ function add_order(array $items, float $shipping = 0.0, string $customer = '', ?
     }, $items),
     'shipping'  => (float)$shipping,
     'total'     => (float)$total,
-    'status'    => 'paid'
+    'status'    => 'paid' // normalizamos depois no painel, se quiser
   ];
   $orders[] = $order;
   save_orders($orders);
   return (int)$order['id'];
 }
 
-// ============ LEDGER (RECEITAS/DESPESAS MANUAIS) =============================
+/* ===== LEDGER (RECEITAS/DESPESAS MANUAIS) ============ */
 function ledger_file(): string {
   return dirname(__DIR__) . '/storage/ledger.json';
 }
