@@ -49,5 +49,22 @@
         "shipping": 0,
         "total": 1,
         "status": "paid"
+    },
+    {
+        "id": 4,
+        "date": "2025-10-24 20:03:48",
+        "customer": "KAUE ALCIATI ANDRADE",
+        "items": [
+            {
+                "product_id": 1,
+                "name": "Bolo teste",
+                "qty": 1,
+                "unit_price": 1,
+                "subtotal": 1
+            }
+        ],
+        "shipping": 0,
+        "total": 1,
+        "status": "paid"
     }
 ]

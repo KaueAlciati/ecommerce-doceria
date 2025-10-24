@@ -1,67 +1,125 @@
-# 🍬 Doce Encanto — E-commerce de Doceria em PHP
+# 🍰 Doce Encanto — Doceria Artesanal
 
-Um site moderno, responsivo e encantador desenvolvido em **PHP** para a doceria fictícia **Doce Encanto**.  
-O objetivo do projeto é oferecer uma experiência agradável e intuitiva para que os clientes possam realizar pedidos de bolos, doces artesanais e sobremesas personalizadas online.
-
----
-
-## 🚀 Tecnologias Utilizadas
-
-- **PHP 8+** — Lógica de exibição, rotas e sessões  
-- **HTML5 / CSS3** — Estrutura e estilização do layout  
-- **JavaScript (mínimo)** — Interações leves no front-end  
-- **Google Fonts** — Tipografia elegante e suave  
-- **Font Awesome** — Ícones modernos e personalizáveis  
+Aplicação web completa desenvolvida em **PHP** com integração ao **Telegram**, simulando um sistema de e-commerce para uma doceria artesanal.  
+O projeto possui sistema de produtos, carrinho, checkout, painel administrativo e confirmação automática de pedidos via bot do Telegram.
 
 ---
 
-## 💻 Funcionalidades
+## 🚀 Funcionalidades Principais
 
-- Página inicial com banner e produtos em destaque  
-- Seção “Sobre nós” e depoimentos de clientes  
-- Catálogo de produtos com categorias e preços  
-- Carrinho de compras dinâmico usando **sessões PHP**  
-- Página de checkout simples e funcional  
-- Estrutura de templates com **includes (header/footer)**  
-- Layout totalmente **responsivo** (mobile-first)
-
----
-
-## 🧁 Estrutura do Projeto
-
-php/
-├─ assets/
-│ ├─ hero-sweets.jpg
-│ ├─ product-birthday.jpg
-│ ├─ product-brigadeiro.jpg
-│ ├─ product-cake.jpg
-│ ├─ product-cupcake.jpg
-│ ├─ product-macarons.jpg
-│ └─ product-wedding.jpg
-│
-├─ includes/
-│ ├─ data.php
-│ ├─ footer.php
-│ ├─ functions.php
-│ └─ header.php
-│
-├─ cart.php
-├─ checkout.php
-├─ index.php
-├─ products.php
-└─ README.md
-
-> Estrutura simples e organizada:  
-> - **assets/**: imagens e recursos visuais.  
-> - **includes/**: partes reutilizáveis e dados do sistema.  
-> - **cart.php / checkout.php / products.php**: páginas principais da loja.  
-> - **index.php**: página inicial do site.  
-> - **README.md**: documentação do projeto.
+- 🧁 Catálogo de produtos dinâmico  
+- 🛒 Carrinho com cálculo automático de totais  
+- 💳 Pagamento com **PIX (5% de desconto)**, **cartão** ou **dinheiro**  
+- 🤖 Envio de confirmação do pedido direto no **Telegram**  
+- 📦 Registro de pedidos, promoções e controle de renda  
+- 👩‍💻 Painel administrativo completo para gerenciamento da loja  
 
 ---
 
-## 📦 Como executar o projeto
+## 🖥️ Telas do Sistema
+
+### 🏠 Página Inicial
+<p align="center">
+  <img src="assets/screenshots/home.png" width="90%" alt="Tela inicial da Doce Encanto" />
+</p>
+
+---
+
+### 🧁 Catálogo e Produto
+<p align="center">
+  <img src="assets/screenshots/produto.png" width="45%" />
+  <img src="assets/screenshots/carrinho.png" width="45%" />
+</p>
+
+---
+
+### 🧾 Checkout e Confirmação
+<p align="center">
+  <img src="assets/screenshots/finalizar.png" width="45%" />
+  <img src="assets/screenshots/pedido realizado.png" width="45%" />
+</p>
+
+---
+
+### 💬 Confirmação via Telegram
+<p align="center">
+  <img src="assets/screenshots/mensagem telegram.png" width="70%" alt="Mensagem automática no Telegram" />
+</p>
+
+---
+
+## 🧭 Área do Dono (Administração)
+
+Gerencie produtos, promoções, pedidos e renda diretamente no painel administrativo.
+
+<p align="center">
+  <img src="assets/screenshots/tela dono produtos.png" width="45%" />
+  <img src="assets/screenshots/tela dono promocoes.png" width="45%" />
+</p>
+
+<p align="center">
+  <img src="assets/screenshots/tela dono pedidos.png" width="45%" />
+  <img src="assets/screenshots/tela dono renda.png" width="45%" />
+</p>
+
+---
+
+## ⚙️ Tecnologias Utilizadas
+
+- **PHP 8+**
+- **TailwindCSS**
+- **Telegram Bot API**
+- **JSON Storage (simulação de banco de dados)**
+- **XAMPP / Apache Localhost**
+
+---
+
+## 💡 Como Testar o Projeto
 
 1. **Clone o repositório:**
    ```bash
-   git clone https://github.com/KaueAlciati/ecommerce-doceria.git
+   git clone https://github.com/KaueAlciati/pastel-sweet-shop.git
+Coloque a pasta em:
+C:\xampp\htdocs\
+e inicie o Apache pelo XAMPP.
+
+Acesse no navegador:
+
+arduino
+Copiar código
+http://localhost/pastel-sweet-shop/
+Crie um bot no BotFather
+e copie o token fornecido.
+
+Edite o arquivo:
+
+bash
+Copiar código
+includes/telegram.php
+e insira:
+
+php
+Copiar código
+const TG_BOT_TOKEN   = 'SEU_TOKEN_AQUI';
+const TG_DEFAULT_CHAT = 'SEU_CHAT_ID_AQUI';
+Finalize um pedido no site e clique em
+"Receber confirmação no Telegram" ✅
+
+### 📸 Outras Telas
+<p align="center"> <img src="assets/screenshots/login.png" width="45%" /> <img src="assets/screenshots/cadastre-se.png" width="45%" /> </p> <p align="center"> <img src="assets/screenshots/dashboard.png" width="45%" /> <img src="assets/screenshots/banco de dados.png" width="45%" /> </p>
+Projeto desenvolvido para fins acadêmicos, simulando uma aplicação real de e-commerce com integração a API externa.
+
+---
+
+### 💾 Para corrigir o seu:
+1️⃣ Apague o conteúdo atual do `README.md`  
+2️⃣ Cole **exatamente** esse acima (sem o bloco triplo \`\`\`markdown inicial)  
+3️⃣ Salve o arquivo  
+
+---
+
+Depois:
+```bash
+git add README.md
+git commit -m "docs: corrige formatação do README no GitHub"
+git push
